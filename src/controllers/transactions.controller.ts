@@ -19,15 +19,7 @@ export const TransactionsController = {
 
       const { recipientId, amount } = req.body;
 
-      const token = req.headers.authorization?.split(" ")[1];
-
-      if (!token) {
-        throw new Error("Invalid credentials");
-      }
-
-      const decodedToken = jwtService.decodeToken(token) as { id: string };
-
-      const senderId = decodedToken.id;
+      const senderId = req.user!.id;
 
       if (!senderId || !recipientId || !amount) {
         throw new Error("Missing information");
@@ -42,12 +34,6 @@ export const TransactionsController = {
   },
   listTransactions: async (req: Request, res: Response) => {
     try {
-      const token = req.headers.authorization?.split(" ")[1];
-
-      if (!token) {
-        throw new Error("Invalid credentials");
-      }
-
       const { startDate: startDateString, endDate: endDateString } = req.query;
 
       if (!startDateString || !endDateString) {
@@ -58,21 +44,13 @@ export const TransactionsController = {
         prismaTransactionRepository
       );
 
-      const decodedToken = jwtService.decodeToken(token) as {
-        id: string;
-        cpf: string;
-        fullName: string;
-        iat: number;
-        exp: number;
-      };
-
       const startDate = new Date(startDateString as string);
       const endDate = new Date(endDateString as string);
 
       const transactions = await useCase.execute(
         startDate,
         endDate,
-        decodedToken.id
+        req.user!.id
       );
 
       return res.status(200).send(transactions);
